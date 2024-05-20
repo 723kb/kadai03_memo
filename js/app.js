@@ -23,11 +23,24 @@ $(document).ready(function () {
   // ページ読み込み時に保存されたメモをリストに追加
   // foreach 配列の各要素に対してaddMemo関数実行
   storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
-  // コンソールログで確認
-  console.log(storedMemos)
 
-  // saveクリック時の関数
+  // コンソールログで確認
+  console.log(storedMemos);
+
+  // saveクリックイベント
   saveButton.on('click', () => {
+    saveMemo();
+  });
+
+  // エンターキーで保存
+  $(document).on('keypress', function (e) {
+    if (e.which == 13) {
+      saveMemo();
+    }
+  });
+
+  // 登録時の関数
+  function saveMemo() {
     // タイトルと本文を取得
     const title = titleInput.val();
     const text = textInput.val();
@@ -49,21 +62,12 @@ $(document).ready(function () {
           titleInput.val('');
           textInput.val('');
         })
-        // 翻訳が失敗した場合の処理
-        // エラーをコンソールに表示
+        // 失敗した場合はコンソールにエラーメッセージ表示
         .catch(error => console.error('Error translating text:', error));
     }
-  });
-
-  // エンターキーで登録するための処理
-$('#title, #text').on('keypress', function(event) {
-  if (event.which === 13) { // エンターキーが押されたかどうかを確認
-    event.preventDefault(); // デフォルトのエンターキーの動作を無効にする
-    saveButton.click(); // 登録ボタンをクリックする
   }
-});
 
-  // clearクリック時の関数
+  // clearクリックイベント
   clearButton.on('click', () => {
     // ローカルストレージからキーに関連づけられたデータを削除
     localStorage.removeItem(localStorageKey);
@@ -77,13 +81,13 @@ $('#title, #text').on('keypress', function(event) {
   filterInput.on('input', () => {
     // フィルター入力欄の値を取得→小文字に変換して大文字との区別をなくす
     const filter = filterInput.val().toLowerCase();
-    // メモのリストを空にする
     list.empty();
     // storedMemos配列からフィルターに一致するメモを抽出
     // filter変数に含まれる文字列が各メモのタイトルに含まれているかをチェック
     storedMemos.filter(memo => memo.title.toLowerCase().includes(filter)).forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
   });
   // フィルタリングされたメモの配列にaddMemoToList関数を使ってリスト表示する
+
 
   // メモをリストに追加する関数
   function addMemoToList(title, text, translatedText) {
@@ -92,22 +96,25 @@ $('#title, #text').on('keypress', function(event) {
     // テンプレートリテラル 関数の引数を表示
     li.html(`
       <h3 class='font-bold m-4'>${title}</h3>
-      <p class='text-gray-500 m-4'>日本語: ${text}</p>
-      <p class='text-gray-700 m-4'>中国語: ${translatedText}</p>
+      <p class='text-gray-500 m-4'>日本語: <span class='jp-text'>${text}</span></p>
+      <p class='text-gray-700 m-4'>中国語: <span class='cn-text'>${translatedText}</span></p>
+      <button class='edit-btn m-4 p-2 hover:bg-green-400 rounded-xl'>
+        <i class="fas fa-edit"></i>
+      </button>
       <button class='delete-btn m-4 p-2 hover:bg-red-400 rounded-xl'>
         <i class="fas fa-trash"></i>
       </button>
     `);
     list.prepend(li);
 
-    // deleteクリック時の処理
+    // deleteクリックイベント
     // liからdelete-btnを持つ要素を探して以下実行
     li.find('.delete-btn').on('click', () => {
       li.remove();
       // 削除する配列がどこにあるかを見つけ、findIndexメソッドで条件に一致する要素を取得
-      // 配列内で最初に見つかった位置のインデックス（配列内の順番）を返す。見つからない場合は-1
+      // 配列内で最初に見つかった位置のインデックス(配列内の順番)を返す。見つからない場合は-1
       const index = storedMemos.findIndex(memo => memo.title === title && memo.text === text && memo.translatedText === translatedText);
-      // 削除対象のメモが見つかった場合（-1でない）のみ、削除
+      // 削除対象のメモが見つかった場合(-1でない)のみ、削除
       if (index !== -1) {
         // storedMemos配列から削除対処のメモを削除
         // spliceメソッド 指定された位置から指定された数の要素を削除
@@ -115,6 +122,42 @@ $('#title, #text').on('keypress', function(event) {
         storedMemos.splice(index, 1);
         // 削除後のメモをローカルストレージに保存
         localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
+      }
+    });
+
+    // editクリックイベント
+    // liからedit-btnを持つ要素を探して以下実行
+    li.find('.edit-btn').on('click', () => {
+      // liから各クラス名を持つ要素を取得し変数に格納
+      const jpTextElement = li.find('.jp-text');
+      const cnTextElement = li.find('.cn-text');
+      // 現在の日本語本文の内容を取得し変数に格納
+      const originalText = jpTextElement.text();
+      // 新しい日本語本文を入力するようプロンプト表示→入力された内容を変数へ格納
+      // 初期値としてoriginalTextを表示
+      const newText = prompt('編集する日本語テキスト:', originalText);
+      // ユーザーがキャンセルせず(null)でない、かつ新本文が旧本文と異なる場合に以下実行
+      if (newText !== null && newText !== originalText) {
+        // 関数を呼び出し翻訳されたテキストを取得するPromiseを返す
+        translateText(newText)
+          // 成功した場合、それぞれの要素を設定→表示更新
+          .then(translatedText => {
+            jpTextElement.text(newText);
+            cnTextElement.text(translatedText);
+            // 配列内からtitleとoriginalTextの両方合うものを探す
+            const index = storedMemos.findIndex(memo => memo.title === title && memo.text === originalText);
+            // 見つかった(インデックスが-1でない)場合に以下実行
+            if (index !== -1) {
+              // 日本語テキスト更新
+              storedMemos[index].text = newText;
+              // 翻訳テキスト更新
+              storedMemos[index].translatedText = translatedText;
+              // 更新された配列をローカルストレージに再度保存
+              localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
+            }
+          })
+          // 失敗した場合はコンソールにエラーメッセージ表示
+          .catch(error => console.error('Error translating text:', error));
       }
     });
   }
@@ -132,9 +175,8 @@ $('#title, #text').on('keypress', function(event) {
       .then(response => response.json())
       // 変換されたJSONデータから翻訳されたテキストを取り出す
       .then(data => data.responseData.translatedText)
-      // 失敗した場合
+      // 失敗した場合はコンソールにエラーメッセージ表示
       .catch(error => {
-        // コンソールにエラーメッセージ表示
         console.error('Error translating text:', error);
         return '翻訳エラー';
       });
