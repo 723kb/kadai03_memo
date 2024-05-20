@@ -39,8 +39,8 @@ GitHubで公開できるようにAPIキーなしで使える翻訳APIを使用�
 [参考記事]
 1. [https://mymemory.translated.net/ja/] 翻訳API MyMemory。使い方はChat GPTに聞いた方が早いかもしれない。
 2. [https://fontawesome.com/] ゴミ箱アイコンはここから使用。はじめにCDNコードを読み込ませて、好きなアイコンのコードを貼るだけ。シンプルで可愛い。
-3.各メソッドなどの基礎知識。
- 　　　　foreach　　　[https://camp.trainocate.co.jp/magazine/javascript-foreach/] 
-　　　　 filter　　　 [https://camp.trainocate.co.jp/magazine/howto-javascript-filter/] 
-  　　Promise 　[https://qiita.com/cotton11aq/items/e4719a7deacb7663a0b8] 
+3. 各メソッドなどの基礎知識。
+ 　　　　foreach　→[https://camp.trainocate.co.jp/magazine/javascript-foreach/] 
+　　　　 filter→[https://camp.trainocate.co.jp/magazine/howto-javascript-filter/] 
+  　　Promise→[https://qiita.com/cotton11aq/items/e4719a7deacb7663a0b8] 
 
