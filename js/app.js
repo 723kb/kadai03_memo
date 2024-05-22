@@ -20,7 +20,7 @@ $(document).ready(function () {
 
   // ローカルストレージから保存されたメモを取得、なければ（null）空の配列を返す
   let storedMemos = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-  // foreach:配列の各要素に対してaddMemo関数実行=ページ読み込み時に保存されたメモをリストに追加
+  // foreach:配列の各要素に対してaddMemo関数実行 = ページ読み込み時に保存されたメモをリストに追加
   storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
 
   // コンソールログで確認
@@ -31,38 +31,38 @@ $(document).ready(function () {
     saveMemo();
   });
 
-  // エンターキーで保存
+  // EnterKeyで保存
   $(document).on('keypress', function (e) {
     if (e.which == 13) {
       saveMemo();
     }
   });
 
-  // 登録時の関数
-  function saveMemo() {
+  // メモを保存する関数
+  async function saveMemo() {
     // タイトルと本文を取得
     const title = titleInput.val();
     const text = textInput.val();
 
-    // タイトルと本文が入力されている場合
+    // タイトルと本文が入力されている場合のみ処理を行う
     if (title && text) {
-      // テキストを翻訳し、翻訳結果を取得するPromiseを呼び出す
-      translateText(text)
-        // 翻訳が成功した場合の処理
-        .then(translatedText => {
-          // メモオブジェクトを作成し、保存されたメモに追加
-          const memo = { title, text, translatedText };
-          storedMemos.push(memo);
-          // ローカルストレージにメモを保存
-          localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
-          // メモをリストに追加
-          addMemoToList(title, text, translatedText);
-          // 入力欄をクリア
-          titleInput.val('');
-          textInput.val('');
-        })
-        // 失敗した場合はコンソールにエラーメッセージ表示
-        .catch(error => console.error('Error translating text:', error));
+      try {
+        // テキストを翻訳(await 完了するまでに次の処理に行かない)
+        const translatedText = await translateText(text);
+        // メモオブジェクトを作成し、保存されたメモ配列に追加
+        const memo = { title, text, translatedText };
+        storedMemos.push(memo);
+        // ローカルストレージにメモを保存
+        localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
+        // メモをリストに追加
+        addMemoToList(title, text, translatedText);
+        // 入力欄をクリア
+        titleInput.val('');
+        textInput.val('');
+      } catch (error) {
+        // エラーハンドリング 失敗した時にコンソールでエラーメッセージ表示
+        console.error('Error translating text:', error);
+      }
     }
   }
 
@@ -76,7 +76,7 @@ $(document).ready(function () {
     list.empty();
   });
 
-  // フィルタリング機能の関数
+  // フィルタ入力欄で入力があった時の処理
   filterInput.on('input', () => {
     // フィルター入力欄の値を取得→小文字に変換して大文字との区別をなくす
     const filter = filterInput.val().toLowerCase();
@@ -86,7 +86,6 @@ $(document).ready(function () {
     storedMemos.filter(memo => memo.title.toLowerCase().includes(filter)).forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
   });
   // フィルタリングされたメモの配列にaddMemoToList関数を使ってリスト表示する
-
 
   // メモをリストに追加する関数
   function addMemoToList(title, text, translatedText) {
@@ -123,7 +122,7 @@ $(document).ready(function () {
     });
 
     // editクリックイベント
-    li.find('.edit-btn').on('click', () => {
+    li.find('.edit-btn').on('click', async () => {
       // liから各クラス名を持つ要素を取得し変数に格納
       const jpTextElement = li.find('.jp-text');
       const cnTextElement = li.find('.cn-text');
@@ -133,48 +132,53 @@ $(document).ready(function () {
       const newText = prompt('編集する日本語テキスト:', originalText);
       // ユーザーがキャンセルせず(nullでない)、かつ新本文が旧本文と異なる場合に以下実行
       if (newText !== null && newText !== originalText) {
-        // 関数を呼び出し翻訳されたテキストを取得するPromiseを返す
-        translateText(newText)
-          // 成功した場合、それぞれの要素を設定→表示更新
-          .then(translatedText => {
-            jpTextElement.text(newText);
-            cnTextElement.text(translatedText);
-            // 配列内からtitleとoriginalTextの両方合うものを探す
-            const index = storedMemos.findIndex(memo => memo.title === title && memo.text === originalText);
-            // 見つかった(インデックスが-1でない)場合に以下実行
-            if (index !== -1) {
-              // 日本語テキスト更新
-              storedMemos[index].text = newText;
-              // 翻訳テキスト更新
-              storedMemos[index].translatedText = translatedText;
-              // 更新された配列をローカルストレージに再度保存
-              localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
-            }
-          })
-          // 失敗した場合はコンソールにエラーメッセージ表示
-          .catch(error => console.error('Error translating text:', error));
+        try {
+          // 新しい日本語テキストを翻訳
+          const translatedText = await translateText(newText);
+          // 日本語テキストと中国語テキストを更新
+          jpTextElement.text(newText);
+          cnTextElement.text(translatedText);
+          // 配列内からtitleとoriginalTextの両方合うものを探す
+          const index = storedMemos.findIndex(memo => memo.title === title && memo.text === originalText);
+          // 見つかった(インデックスが-1でない)場合に以下実行
+          if (index !== -1) {
+            // 日本語テキスト更新
+            storedMemos[index].text = newText;
+            // 翻訳テキスト更新
+            storedMemos[index].translatedText = translatedText;
+            // 更新された配列をローカルストレージに再度保存
+            localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
+          }
+        } catch (error) {
+          // エラーハンドリング
+          console.error('Error translating text:', error);
+        }
       }
     });
   }
 
   // MyMemory APIを使って指定されたテキストを翻訳する関数
-  function translateText(text) {
+  async function translateText(text) {
     // encodeURIComponent関数でテキストをURIエンコードすると特殊文字を含む場合でも正しく動作する
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|zh-CN`;
-    // fetch関数→作成したURLにリクエストを送信し、結果としてPromiseを返す
-    return fetch(url)
-      // 成功した場合はPromiseを解決し、JSON形式に変換
-      .then(response => response.json())
-      // 変換されたJSONデータから翻訳されたテキストを取り出す
-      .then(data => data.responseData.translatedText)
-      // 失敗した場合はコンソールにエラーメッセージ表示
-      .catch(error => {
-        console.error('Error translating text:', error);
-        return '翻訳エラー';
-      });
+    try {
+      // APIリクエストを送信し、レスポンスを取得 (fetch 指定されたURLにリクエスト送信)
+      const response = await fetch(url);
+      // レスポンスをJSON形式に変換
+      const data = await response.json();
+      // 翻訳されたテキストを返す
+      return data.responseData.translatedText;
+    } catch (error) {
+      // エラーハンドリング
+      console.error('Error translating text:', error);
+      // エラーが発生した場合のデフォルトメッセージを返す
+      return '翻訳エラー';
+    }
   }
 });
 
 // Promiseと明示しなくてもfetchは暗黙的にPromiseを返す!
-// translateText関数内でfetchを使用しているため、fetchとresponse.json()がそれぞれPromiseを返している
-// なのでtranslateTextが呼び出されているsaveMemo関数、addMemoList関数でも暗黙的にPromiseが返されている(.thenの部分)
+// そのため,then(), awaitで非同期的に結果を処理できる
+
+// async, awaitで書く方が可読性が上がり、エラーハンドリングも一貫するため推奨されている →あまりよくわからない...
+// async には.thenもawaitも使えるが、awaitはasyncの中でしか使えない
