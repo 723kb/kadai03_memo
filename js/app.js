@@ -18,10 +18,9 @@ $(document).ready(function () {
   const filterInput = $('#filter');
   const localStorageKey = 'memos';
 
-  // ローカルストレージからキーに関連づけられた値（＝保存されたメモ）を取得、なければ（null）空の配列を返す
+  // ローカルストレージから保存されたメモを取得、なければ（null）空の配列を返す
   let storedMemos = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-  // ページ読み込み時に保存されたメモをリストに追加
-  // foreach 配列の各要素に対してaddMemo関数実行
+  // foreach:配列の各要素に対してaddMemo関数実行=ページ読み込み時に保存されたメモをリストに追加
   storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
 
   // コンソールログで確認
@@ -91,9 +90,8 @@ $(document).ready(function () {
 
   // メモをリストに追加する関数
   function addMemoToList(title, text, translatedText) {
-    // 新しいli要素作成し、cssを追加
+    // 新しいli要素作成→cssを追加→リストに追加
     const li = $('<li></li>').addClass('m-5 p-2 border-solid border-2 border-slate-500 rounded-xl hover:bg-pink-50');
-    // テンプレートリテラル 関数の引数を表示
     li.html(`
       <h3 class='font-bold m-4'>${title}</h3>
       <p class='text-gray-500 m-4'>日本語: <span class='jp-text'>${text}</span></p>
@@ -116,9 +114,8 @@ $(document).ready(function () {
       const index = storedMemos.findIndex(memo => memo.title === title && memo.text === text && memo.translatedText === translatedText);
       // 削除対象のメモが見つかった場合(-1でない)のみ、削除
       if (index !== -1) {
-        // storedMemos配列から削除対処のメモを削除
-        // spliceメソッド 指定された位置から指定された数の要素を削除
-        // 第一引数に削除開始位置のインデックス、第二引数に削除する要素の数を指定
+        // storedMemos配列から削除対象のメモを削除
+        // spliceメソッド 第一引数:削除開始位置のインデックス 第二引数:削除する要素の数
         storedMemos.splice(index, 1);
         // 削除後のメモをローカルストレージに保存
         localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
@@ -126,17 +123,15 @@ $(document).ready(function () {
     });
 
     // editクリックイベント
-    // liからedit-btnを持つ要素を探して以下実行
     li.find('.edit-btn').on('click', () => {
       // liから各クラス名を持つ要素を取得し変数に格納
       const jpTextElement = li.find('.jp-text');
       const cnTextElement = li.find('.cn-text');
       // 現在の日本語本文の内容を取得し変数に格納
       const originalText = jpTextElement.text();
-      // 新しい日本語本文を入力するようプロンプト表示→入力された内容を変数へ格納
-      // 初期値としてoriginalTextを表示
+      // 新しい日本語本文を入力するプロンプト表示→入力された内容を変数へ格納 初期値:originalTextを表示
       const newText = prompt('編集する日本語テキスト:', originalText);
-      // ユーザーがキャンセルせず(null)でない、かつ新本文が旧本文と異なる場合に以下実行
+      // ユーザーがキャンセルせず(nullでない)、かつ新本文が旧本文と異なる場合に以下実行
       if (newText !== null && newText !== originalText) {
         // 関数を呼び出し翻訳されたテキストを取得するPromiseを返す
         translateText(newText)
@@ -162,16 +157,13 @@ $(document).ready(function () {
     });
   }
 
-  // 指定されたテキストを翻訳する関数
+  // MyMemory APIを使って指定されたテキストを翻訳する関数
   function translateText(text) {
-    // MyMemory APIを使用
-    // encodeURIComponent関数でテキストをURIエンコードして特殊文字を含む場合でも正しく動作する
+    // encodeURIComponent関数でテキストをURIエンコードすると特殊文字を含む場合でも正しく動作する
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|zh-CN`;
-
     // fetch関数→作成したURLにリクエストを送信し、結果としてPromiseを返す
     return fetch(url)
-      // 成功した場合
-      // fetchメソッドが返したPromiseを解決し、JSON形式に変換
+      // 成功した場合はPromiseを解決し、JSON形式に変換
       .then(response => response.json())
       // 変換されたJSONデータから翻訳されたテキストを取り出す
       .then(data => data.responseData.translatedText)
@@ -182,3 +174,7 @@ $(document).ready(function () {
       });
   }
 });
+
+// Promiseと明示しなくてもfetchは暗黙的にPromiseを返す!
+// translateText関数内でfetchを使用しているため、fetchとresponse.json()がそれぞれPromiseを返している
+// なのでtranslateTextが呼び出されているsaveMemo関数、addMemoList関数でも暗黙的にPromiseが返されている(.thenの部分)
