@@ -1,14 +1,14 @@
 // 使い方説明のtoggleメソッド
-$(document).ready(function () {
+$(document).ready(() => {
   // 最初は非表示にする
   $('#toggleDiv').hide();
-  $('#toggleButton').click(function () {
+  $('#toggleButton').click(() => {
     $('#toggleDiv').slideToggle();
   });
 });
 
 // ページ読み込み時の関数
-$(document).ready(function () {
+$(document).ready(() => {
   // 各要素を取得し変数に格納
   const titleInput = $('#title');
   const textInput = $('#text');
@@ -18,77 +18,8 @@ $(document).ready(function () {
   const filterInput = $('#filter');
   const localStorageKey = 'memos';
 
-  // ローカルストレージから保存されたメモを取得、なければ（null）空の配列を返す
-  let storedMemos = JSON.parse(localStorage.getItem(localStorageKey)) || [];
-  // foreach:配列の各要素に対してaddMemo関数実行 = ページ読み込み時に保存されたメモをリストに追加
-  storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
-
-  // コンソールログで確認
-  console.log(storedMemos);
-
-  // saveクリックイベント
-  saveButton.on('click', () => {
-    saveMemo();
-  });
-
-  // EnterKeyで保存
-  $(document).on('keypress', function (e) {
-    if (e.which == 13) {
-      saveMemo();
-    }
-  });
-
-  // メモを保存する関数
-  async function saveMemo() {
-    // タイトルと本文を取得
-    const title = titleInput.val();
-    const text = textInput.val();
-
-    // タイトルと本文が入力されている場合のみ処理を行う
-    if (title && text) {
-      try {
-        // テキストを翻訳(await 完了するまでに次の処理に行かない)
-        const translatedText = await translateText(text);
-        // メモオブジェクトを作成し、保存されたメモ配列に追加
-        const memo = { title, text, translatedText };
-        storedMemos.push(memo);
-        // ローカルストレージにメモを保存
-        localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
-        // メモをリストに追加
-        addMemoToList(title, text, translatedText);
-        // 入力欄をクリア
-        titleInput.val('');
-        textInput.val('');
-      } catch (error) {
-        // エラーハンドリング 失敗した時にコンソールでエラーメッセージ表示
-        console.error('Error translating text:', error);
-      }
-    }
-  }
-
-  // clearクリックイベント
-  clearButton.on('click', () => {
-    // ローカルストレージからキーに関連づけられたデータを削除
-    localStorage.removeItem(localStorageKey);
-    // 空の配列でリセット
-    storedMemos = [];
-    // listの中身を空にする
-    list.empty();
-  });
-
-  // フィルタ入力欄で入力があった時の処理
-  filterInput.on('input', () => {
-    // フィルター入力欄の値を取得→小文字に変換して大文字との区別をなくす
-    const filter = filterInput.val().toLowerCase();
-    list.empty();
-    // storedMemos配列からフィルターに一致するメモを抽出
-    // filter変数に含まれる文字列が各メモのタイトルに含まれているかをチェック
-    storedMemos.filter(memo => memo.title.toLowerCase().includes(filter)).forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
-  });
-  // フィルタリングされたメモの配列にaddMemoToList関数を使ってリスト表示する
-
   // メモをリストに追加する関数
-  function addMemoToList(title, text, translatedText) {
+  const addMemoToList = (title, text, translatedText) => {
     // 新しいli要素作成→cssを追加→リストに追加
     const li = $('<li></li>').addClass('m-5 p-2 border-solid border-2 border-slate-500 rounded-xl hover:bg-pink-50');
     li.html(`
@@ -157,8 +88,77 @@ $(document).ready(function () {
     });
   }
 
+  // ローカルストレージから保存されたメモを取得、なければ（null）空の配列を返す
+  let storedMemos = JSON.parse(localStorage.getItem(localStorageKey)) || [];
+  // foreach:配列の各要素に対してaddMemo関数実行 = ページ読み込み時に保存されたメモをリストに追加
+  storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
+
+  // コンソールログで確認
+  console.log(storedMemos,"配列の中身");
+  console.log(localStorageKey,"鍵の名前");
+
+  // saveクリックイベント
+  saveButton.on('click', () => {
+    saveMemo();
+  });
+
+  // EnterKeyで保存
+  $(document).on('keypress', (e) => {
+    if (e.which == 13) {
+      saveMemo();
+    }
+  });
+
+  // メモを保存する関数
+  const saveMemo = async () => {
+    // タイトルと本文を取得
+    const title = titleInput.val();
+    const text = textInput.val();
+
+    // タイトルと本文が入力されている場合のみ処理を行う
+    if (title && text) {
+      try {
+        // テキストを翻訳(await 完了するまでに次の処理に行かない)
+        const translatedText = await translateText(text);
+        // メモオブジェクトを作成し、保存されたメモ配列に追加
+        const memo = { title, text, translatedText };
+        storedMemos.push(memo);
+        // ローカルストレージにメモを保存
+        localStorage.setItem(localStorageKey, JSON.stringify(storedMemos));
+        // メモをリストに追加
+        addMemoToList(title, text, translatedText);
+        // 入力欄をクリア
+        titleInput.val('');
+        textInput.val('');
+      } catch (error) {
+        // エラーハンドリング 失敗した時にコンソールでエラーメッセージ表示
+        console.error('Error translating text:', error);
+      }
+    }
+  }
+
+  // clearクリックイベント
+  clearButton.on('click', () => {
+    // ローカルストレージからキーに関連づけられたデータを削除
+    localStorage.removeItem(localStorageKey);
+    // 空の配列でリセット
+    storedMemos = [];
+    // listの中身を空にする
+    list.empty();
+  });
+
+  // フィルタ入力欄で入力があった時の処理
+  filterInput.on('input', () => {
+    // フィルター入力欄の値を取得→小文字に変換して大文字との区別をなくす
+    const filter = filterInput.val().toLowerCase();
+    list.empty();
+    // storedMemos配列からフィルターに一致するメモを抽出
+    // filter変数に含まれる文字列が各メモのタイトルに含まれているかをチェック
+    storedMemos.filter(memo => memo.title.toLowerCase().includes(filter)).forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
+  });
+
   // MyMemory APIを使って指定されたテキストを翻訳する関数
-  async function translateText(text) {
+  const translateText = async (text) => {
     // encodeURIComponent関数でテキストをURIエンコードすると特殊文字を含む場合でも正しく動作する
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|zh-CN`;
     try {
@@ -171,11 +171,12 @@ $(document).ready(function () {
     } catch (error) {
       // エラーハンドリング
       console.error('Error translating text:', error);
-      // エラーが発生した場合のデフォルトメッセージを返す
-      return '翻訳エラー';
+      throw error;
     }
   }
 });
+
+
 
 // Promiseと明示しなくてもfetchは暗黙的にPromiseを返す!
 // そのため,then(), awaitで非同期的に結果を処理できる
