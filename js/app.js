@@ -6,6 +6,12 @@ $(document).ready(() => {
     $('#toggleDiv').slideToggle();
   });
 
+  // フィルタリング機能説明のtoggleメソッド
+  $("#filterArea").hide();
+  $("#search").on("click", () => {
+    $("#filterArea").slideToggle();
+  });
+
   // 各要素を取得し変数に格納
   const titleInput = $('#title');
   const textInput = $('#text');
@@ -20,14 +26,14 @@ $(document).ready(() => {
     // 新しいli要素作成→cssを追加→リストに追加
     const li = $('<li></li>').addClass('m-5 p-2 border-solid border-2 border-slate-500 rounded-xl hover:bg-pink-50');
     li.html(`
-      <h3 class='font-bold m-4'>${title}</h3>
+      <h3 class='font-bold m-4'>タイトル: ${title}</h3>
       <p class='text-gray-500 m-4'>日本語: <span class='jp-text'>${text}</span></p>
       <p class='text-gray-700 m-4'>中国語: <span class='cn-text'>${translatedText}</span></p>
       <button class='edit-btn m-4 p-2 hover:bg-green-400 rounded-xl'>
         <i class="fas fa-edit"></i>
       </button>
       <button class='delete-btn m-4 p-2 hover:bg-red-400 rounded-xl'>
-        <i class="fas fa-trash"></i>
+        <i class="fa-regular fa-trash-can"></i>
       </button>
       <button class="speak-memo m-4 p-2 hover:bg-blue-400 rounded-xl">
         <i class="fa fa-volume-up"></i>
@@ -152,20 +158,37 @@ $(document).ready(() => {
   clearButton.on('click', () => {
     // ローカルストレージからキーに関連づけられたデータを削除
     localStorage.removeItem(localStorageKey);
-    // 空の配列でリセット
-    storedMemos = [];
-    // listの中身を空にする
-    list.empty();
+    // 確認メッセージを表示し、OKが押された場合のみ削除を実行
+    if (confirm("本当に削除しますか？")) {
+      // 空の配列でリセット
+      storedMemos = [];
+      // listの中身を空にする
+      list.empty();
+    }
   });
 
   // フィルタ入力欄で入力があった時の処理
-  filterInput.on('input', () => {
+$('#searchButton').on('click', () => {
     // フィルター入力欄の値を取得→小文字に変換して大文字との区別をなくす
     const filter = filterInput.val().toLowerCase();
     list.empty();
     // storedMemos配列からフィルターに一致するメモを抽出
     // filter変数に含まれる文字列が各メモのタイトルに含まれているかをチェック
-    storedMemos.filter(memo => memo.title.toLowerCase().includes(filter)).forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
+    const filteredMemos = storedMemos.filter(memo => memo.title.toLowerCase().includes(filter));
+    if (filteredMemos.length === 0) { // 配列の長さが0なら条件に一致するものはない
+      $('#noMemosMessage').show();
+    } else {
+      $('#noMemosMessage').hide();
+      filteredMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
+    }
+
+// フィルター入力欄を空にする処理
+$('#filterClear').on('click', () => {
+  $('#filter').val(''); // フィルター入力欄を空にする
+  // メモを再読み込みする
+  list.empty(); // リストを空にする
+  storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
+});
   });
 
   // MyMemory APIを使って指定されたテキストを翻訳する関数
