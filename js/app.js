@@ -97,7 +97,7 @@ $(document).ready(() => {
     li.find('.speak-memo').on('click', function () {
       console.log('スピーカーボタンがクリックされました。'); // デバッグ用メッセージ
       // .cn-text要素を取得し、その内容をログに表示
-      const cnTextElement = $(this).closest('li').find('.cn-text'); // ここを修正
+      const cnTextElement = $(this).closest('li').find('.cn-text'); // closestでないと動かなかった
       console.log("cn-text element:", cnTextElement); // 追加
       const textToSpeak = cnTextElement.text();
       console.log("Text to speak:", textToSpeak); // 追加: スピーカーボタンがクリックされたときのテキストをログに出力
