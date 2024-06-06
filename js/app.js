@@ -5,10 +5,7 @@ $(document).ready(() => {
   $('#toggleButton').click(() => {
     $('#toggleDiv').slideToggle();
   });
-});
 
-// ページ読み込み時の関数
-$(document).ready(() => {
   // 各要素を取得し変数に格納
   const titleInput = $('#title');
   const textInput = $('#text');
@@ -31,6 +28,9 @@ $(document).ready(() => {
       </button>
       <button class='delete-btn m-4 p-2 hover:bg-red-400 rounded-xl'>
         <i class="fas fa-trash"></i>
+      </button>
+      <button class="speak-memo m-4 p-2 hover:bg-blue-400 rounded-xl">
+        <i class="fa fa-volume-up"></i>
       </button>
     `);
     list.prepend(li);
@@ -86,7 +86,18 @@ $(document).ready(() => {
         }
       }
     });
-  }
+
+    // スピーカーボタンのクリックイベント
+    li.find('.speak-memo').on('click', function () {
+      console.log('スピーカーボタンがクリックされました。'); // デバッグ用メッセージ
+      // .cn-text要素を取得し、その内容をログに表示
+      const cnTextElement = $(this).closest('li').find('.cn-text'); // ここを修正
+      console.log("cn-text element:", cnTextElement); // 追加
+      const textToSpeak = cnTextElement.text();
+      console.log("Text to speak:", textToSpeak); // 追加: スピーカーボタンがクリックされたときのテキストをログに出力
+      speakText(textToSpeak);
+    });
+  };
 
   // ローカルストレージから保存されたメモを取得、なければ（null）空の配列を返す
   let storedMemos = JSON.parse(localStorage.getItem(localStorageKey)) || [];
@@ -94,8 +105,8 @@ $(document).ready(() => {
   storedMemos.forEach(memo => addMemoToList(memo.title, memo.text, memo.translatedText));
 
   // コンソールログで確認
-  console.log(storedMemos,"配列の中身");
-  console.log(localStorageKey,"鍵の名前");
+  console.log(storedMemos, "配列の中身");
+  console.log(localStorageKey, "鍵の名前");
 
   // saveクリックイベント
   saveButton.on('click', () => {
@@ -159,21 +170,43 @@ $(document).ready(() => {
 
   // MyMemory APIを使って指定されたテキストを翻訳する関数
   const translateText = async (text) => {
+    console.log("Translating text:", text); // テキストが正しく渡されていることを確認
     // encodeURIComponent関数でテキストをURIエンコードすると特殊文字を含む場合でも正しく動作する
     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ja|zh-CN`;
     try {
       // APIリクエストを送信し、レスポンスを取得 (fetch 指定されたURLにリクエスト送信)
       const response = await fetch(url);
-      // レスポンスをJSON形式に変換
       const data = await response.json();
-      // 翻訳されたテキストを返す
-      return data.responseData.translatedText;
+      console.log("API response inside translateText function:", data);
+      // エラーがあれば例外をスロー
+      if (data && data.responseData && data.responseData.translatedText) {
+        console.log("Translated text:", data.responseData.translatedText);
+        return data.responseData.translatedText;
+      } else {
+        throw new Error('Translation error: Translated text not found in response data');
+      }
     } catch (error) {
       // エラーハンドリング
       console.error('Error translating text:', error);
       throw error;
     }
   }
+  // メモを音読する関数
+  const speakText = (text) => {
+    console.log('音読関数が呼び出されました。');
+    // ブラウザがWeb Speech APIのspeechSynthesisに対応しているかを確認
+    if ('speechSynthesis' in window) {
+      // 音声合成用のUtteranceオブジェクトを作成
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-CN'; // 中国語に設定
+      // テキストを音声で読み上げる
+      console.log("音読開始:", text); // コンソールログを追加
+      speechSynthesis.speak(utterance);
+    } else {
+      // ブラウザが音声合成に対応していない場合の処理
+      alert('このブラウザは音声合成に対応していません。');
+    }
+  };
 });
 
 
